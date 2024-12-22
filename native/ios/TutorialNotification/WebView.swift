@@ -36,6 +36,7 @@ final class WebView: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         super.init()
         
         configuration.userContentController.add(self, name: "openSafari")
+        configuration.userContentController.add(self, name: "sendNotification")
 
         // fixing the zoom level
         addScript(configuration, "var meta = document.createElement('meta');" +
@@ -88,6 +89,8 @@ final class WebView: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
     
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         switch message.name {
+        case "sendNotification":
+            sendNotification()
         case "openSafari":
             print(message.body)
             let url = URL(string:message.body as! String)
@@ -100,6 +103,26 @@ final class WebView: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
             assertionFailure("JavaScript error: \(error)")
         default:
             assertionFailure("Received invalid message: \(message.name)")
+        }
+    }
+
+    // 追加
+    func sendNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "tutorial_notificationの通知"
+        content.body = "テキスト"
+        content.sound = .default
+        content.badge = 1
+        let identifier = "通知送信チュートリアルの通知チャネル"
+
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
+
+        UNUserNotificationCenter.current().add(request) { (error: Error?) in
+            if error != nil {
+                print("通知の送信に失敗した")
+            } else {
+                print("通知の送信に成功した")
+            }
         }
     }
 }

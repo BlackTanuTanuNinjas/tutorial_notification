@@ -1,9 +1,16 @@
 const SendNotification = {
     mounted(){
-        this.el.addEventListener('click', () => {
-            window.Android.sendNotification()
-        })
+        userAgent = navigator.userAgent;
 
+        if (/Android/.test(userAgent)) {
+            this.el.addEventListener('click', () => {
+                window.Android.sendNotification()
+            })
+        } else if (/Mac/.test(userAgent)) {
+            this.el.addEventListener('click', () => {
+                window.webkit.messageHandlers.sendNotification.postMessage("sendNotification");
+            })
+        }
     }
 }
 
