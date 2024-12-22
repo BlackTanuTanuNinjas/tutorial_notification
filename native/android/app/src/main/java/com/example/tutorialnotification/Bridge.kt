@@ -1,6 +1,8 @@
 package com.example.tutorialnotification
 
 import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -10,6 +12,7 @@ import android.os.Build
 import android.os.Message
 import android.system.Os
 import android.util.Log
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -17,6 +20,7 @@ import android.webkit.WebViewClient
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.content.FileProvider
 import org.json.JSONArray
 import org.json.JSONObject
@@ -53,6 +57,7 @@ class Bridge(private val applicationContext : Context, private var webview : Web
         Os.setenv("HOME", applicationContext.filesDir.absolutePath, false)
 
         setWebView(webview)
+        webview.addJavascriptInterface(this, "Android")
 
         thread(start = true) {
             while (true) {
@@ -176,8 +181,43 @@ class Bridge(private val applicationContext : Context, private var webview : Web
                 throw Exception(ret)
             }
         }
+
+        createNotificationChannel()
     }
 
+    // 追加
+    fun createNotificationChannel() {
+        val channel = NotificationChannel("tutorial_call_channel", "チュートリアル通知", NotificationManager.IMPORTANCE_DEFAULT).apply {
+            description = "通知送信チュートリアルの通知チャネル"
+        }
+        val notificationManager =
+            applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    @JavascriptInterface
+    fun sendNotification() {
+        val intent = Intent(applicationContext, MainActivity::class.java)
+
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(applicationContext, 0, intent,  PendingIntent.FLAG_IMMUTABLE)
+
+        val notification = NotificationCompat.Builder(applicationContext, "tutorial_call_channel")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("tutorial_notificationの通知")
+            .setContentText("テキスト")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true) 
+            .build()
+
+        val notificationManager =
+            applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        notificationManager.notify(1, notification)
+    }
+
+    // ここまで
 
     private fun unpackAsset(releaseDir: String, assetName: String): Boolean {
         assets!!
